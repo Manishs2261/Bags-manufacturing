@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "733776442461",
+    "project_id": "bags-manufacturer-10727",
+    "storage_bucket": "bags-manufacturer-10727.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:733776442461:android:babe6cd219f25c1c8ac9b4",
+        "android_client_info": {
+          "package_name": "com.example.bags"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvslaA7Lcgbqtrz2hmabj7_sLVwSttzjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
