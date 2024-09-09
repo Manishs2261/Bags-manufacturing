@@ -9,7 +9,8 @@ class ViewCompletedJob extends StatefulWidget {
 }
 
 class _ViewCompletedJobState extends State<ViewCompletedJob> {
-  final CollectionReference jobCollection = FirebaseFirestore.instance.collection("JobCollection");
+  final CollectionReference jobCollection =
+      FirebaseFirestore.instance.collection("JobCollection");
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -36,7 +37,8 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
               decoration: InputDecoration(
                 hintText: 'Search by Shop Name',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0)),
                 isDense: true,
               ),
               onChanged: (value) {
@@ -48,7 +50,10 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
           ),
           Expanded(
             child: StreamBuilder(
-              stream: jobCollection.where('isCompleted', isEqualTo: true).orderBy('date', descending: true).snapshots(),
+              stream: jobCollection
+                  .where('isCompleted', isEqualTo: true)
+                  .orderBy('date', descending: true)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text("Error: ${snapshot.error}"));
@@ -63,14 +68,16 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
                 // Filter the users based on the search query
                 final filteredUsers = users.where((user) {
                   final data = user.data() as Map<String, dynamic>;
-                  final shopName = data['shopName']?.toString().toLowerCase() ?? '';
+                  final shopName =
+                      data['shopName']?.toString().toLowerCase() ?? '';
                   return shopName.contains(_searchQuery);
                 }).toList();
 
                 return ListView.builder(
                   itemCount: filteredUsers.length,
                   itemBuilder: (context, index) {
-                    Map<String, dynamic> user = filteredUsers[index].data() as Map<String, dynamic>;
+                    Map<String, dynamic> user =
+                        filteredUsers[index].data() as Map<String, dynamic>;
                     return Container(
                       width: double.infinity,
                       padding: EdgeInsets.all(8),
@@ -93,59 +100,74 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
                                 width: 30,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(color: Colors.green, width: 2),
+                                  border:
+                                      Border.all(color: Colors.green, width: 2),
                                 ),
                                 child: Icon(Icons.done, color: Colors.green),
                               ),
                               SizedBox(width: 20),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user['shopName'] ?? 'NO Name',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Size : ${user['size'] ?? 'NO Name'}',
-                                        style: TextStyle(fontSize: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user['shopName'] ?? 'NO Name',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                    Text("Tailors Name:-${user['tailorName'] ?? 'NO Name'}",
+                                      style: TextStyle(
+                                        fontSize: 16,
                                       ),
-                                      SizedBox(width: 30),
-                                      Text(
-                                        'Handle: ${user['Handle'] ?? 'NO Name'}',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Pcs: ${user['pcs'] ?? 'NO Name'}',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                      SizedBox(width: 30),
-                                      Text(
-                                        'Rate: ${user['rate'] ?? 'NO Name'}',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(width: 30),
-                                  Text(
-                                    'Date: ${user['date'] ?? 'NO Name'}',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Total Amount: ${(user['totalAmount'] ?? 0).toString()}',
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Size:- ${user['size'] ?? 'NO Name'}',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                        SizedBox(width: 30),
+                                        Text(
+                                          'Handle:- ${user['Handle'] ?? 'NO Name'}',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Pcs:- ${user['pcs'] ?? 'NO Name'}',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                        SizedBox(width: 30),
+                                        Text(
+                                          'Rate:- ${user['rate'] ?? 'NO Name'}',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(width: 30),
+                                    Text(
+                                      'Total Amount:- ${(user['totalAmount'] ?? 0).toString()}',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500),
+                                    ),
+                                    Text(
+                                      'Delivered Date:- ${user['date'] ?? 'NO Name'}',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                    Text(
+                                      'Received Date:- ${user['reDate'] ?? 'NO Name'}',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                    Text(
+                                      'Other:- ${user['other'] ?? 'NO Name'}',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           )

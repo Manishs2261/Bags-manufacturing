@@ -1,9 +1,12 @@
 import 'dart:convert';
+
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:bags/addNewShop.dart';
+import 'package:bags/table.dart';
 import 'package:bags/viewActiveJob.dart';
 import 'package:bags/viewCompletedJob.dart';
 import 'package:bags/viewExistingShop.dart';
+import 'package:bags/viewExistingTailor.dart';
 import 'package:cherry_toast/cherry_toast.dart';
 import 'package:cherry_toast/resources/arrays.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,7 +14,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
-enum bagHandle { H, B }
+import 'addNewTailor.dart';
+
+enum bagHandle { H, WH }
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -25,27 +30,64 @@ class _HomeState extends State<Home> {
 
   final gobleKey = GlobalKey<FormState>();
   var shopName;
+  var userMobileNumber;
+  var tailorName;
+  var tailorMobileNumber;
 
   final pcsController = TextEditingController();
   final rateController = TextEditingController();
   final sizeController = TextEditingController();
+  final otherController = TextEditingController();
+
   double finalAmount = 0.0;
   bool _isLoading = false;
 
-  List<String> _list = [];
+  List<Map<String, String>> _list = [];
+  List<Map<String, String>> tailor_list = [];
+
+
+  Future<void> _fetchTailorNames() async {
+    try {
+      var querySnapshot =
+      await FirebaseFirestore.instance.collection('Tailor').get();
+      var tailorName = querySnapshot.docs.map((doc) {
+        return {
+          'tailorName': doc['tailorName'] as String,
+          'mobileNumber': doc['mobileNumber'] as String
+        };
+      }).toList();
+
+      setState(() {
+        tailor_list = tailorName;
+      });
+    } catch (e) {
+      print("Error fetching shop names: $e");
+      CherryToast.error(
+        description: Text("Failed to fetch shop names",
+            style: TextStyle(color: Colors.black)),
+        animationType: AnimationType.fromBottom,
+        toastPosition: Position.bottom,
+        animationDuration: Duration(milliseconds: 300),
+      ).show(context);
+    }
+  }
+
 
   Future<void> _fetchShopNames() async {
     try {
       var querySnapshot =
           await FirebaseFirestore.instance.collection('User').get();
-      var shopNames =
-          querySnapshot.docs.map((doc) => doc['shopName'] as String).toList();
+      var shopNames = querySnapshot.docs.map((doc) {
+        return {
+          'shopName': doc['shopName'] as String,
+          'mobileNumber': doc['mobileNumber'] as String
+        };
+      }).toList();
 
       setState(() {
         _list = shopNames;
       });
     } catch (e) {
-
       print("Error fetching shop names: $e");
       CherryToast.error(
         description: Text("Failed to fetch shop names",
@@ -59,24 +101,29 @@ class _HomeState extends State<Home> {
 
   Future<void> addJob() async {
     var now = DateTime.now();
-    var formatter = DateFormat('dd-MM-yyyy');
+    var formatter = DateFormat('yyyy-MM-dd');
     String formattedDate = formatter.format(now);
 
     try {
       await FirebaseFirestore.instance.collection("JobCollection").add({
         'shopName': shopName,
+        'tailorName':tailorName,
+        'mobile': userMobileNumber,
         'pcs': pcsController.text,
         'rate': rateController.text,
         'size': sizeController.text,
         'totalAmount': finalAmount,
         'Handle': bagHandleOrWithoutHandle?.name,
         'isCompleted': false,
+        'other': otherController.text,
         'date': formattedDate,
       });
 
       pcsController.clear();
       rateController.clear();
       sizeController.clear();
+      otherController.clear();
+
       finalAmount = 0;
     } catch (e) {
       print("Error $e");
@@ -93,24 +140,62 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> sendWhatsAppMessage(BuildContext context) async {
-    var url = Uri.parse('https://graph.facebook.com/v20.0/395078663694887/messages');
+    var now = DateTime.now();
+    var formatter = DateFormat('dd-MM-yyyy');
+    String formattedDate = formatter.format(now);
+
+    var url = Uri.parse(
+        'https://graph.facebook.com/v20.0/395078663694887/messages'); // Replace with your API endpoint
+
+    // Headers
     var headers = {
-      'Authorization': 'Bearer EAAQtQymSe5gBO0I9NQ6n4ueGqVViWsBzjFubF2jNs8tpsGMHdRffny7lTeHXoKC3kFTQTCSdZA2FWuTXN2sAQw1n6M9sIVmI7Pc3oIT1UmekCWBZC0IZB607gh2ZB6tkko21jhq06mVvdIO9QbNz7vhnaWO6LlrzjtFyTmtmxBYIzzc8gdaYnbTYiZCsUvVCSrJoATcVKJGfysWdF1ZCnvI395EYvGHCbIh3kzw5IYWSoZD',
+      'Authorization':
+          'Bearer EAAQtQymSe5gBOybh0V4R5SGZC6OAL4mGsfSH2Q8uFvJEnxQPHSZBgSo1Q6kYVW09VhZBfwrViqNZC0aANKbqGEsXSyl1mLcajs0ZBZCwKJt0ZCjyaVnSAFXNwUSis9w8NFRCZA8O3wzvTGx95GBZCxqToOxZCAZCpi3z5OmVIazCe5Dholl0moZARM47h0k5AEQ33gL8IYaubcVDD8UcKyPyAAm7wEYuo3gBdTJyOKqViipRUndutBwVSaUL',
+      // Replace with your token
       'Content-Type': 'application/json',
     };
+
+    // Body
     var body = jsonEncode({
       'messaging_product': 'whatsapp',
-      'to': '917389523175',
+      'to': userMobileNumber, // Replace with recipient's phone number
       'type': 'template',
       'template': {
-        'name': 'hello_world',
-        'language': {'code': 'en_US'}
+        'name': 'deliver', // Replace with your WhatsApp template name
+        'language': {
+          'code': 'en' // English language code
+        },
+        'components': [
+          {
+            'type': 'body',
+            'parameters': [
+              {'type': 'text', 'text': formattedDate},
+              // Placeholder {{1}} for PickUp Date
+              {'type': 'text', 'text': shopName},
+              // Placeholder {{2}} for Shop Name
+              {'type': 'text', 'text': sizeController.text},
+              // Placeholder {{3}} for Size
+              {'type': 'text', 'text': bagHandleOrWithoutHandle?.name},
+              // Placeholder {{4}} for Handle/Without Handle
+              {'type': 'text', 'text': otherController.text},
+              // Placeholder {{5}} for Other
+              {'type': 'text', 'text': pcsController.text},
+              // Placeholder {{6}} for Pcs
+              {'type': 'text', 'text': rateController.text},
+              // Placeholder {{7}} for Rate
+              {'type': 'text', 'text': finalAmount}
+              // Placeholder {{8}} for Total
+            ]
+          }
+        ]
       }
     });
 
     try {
       var response = await http.post(url, headers: headers, body: body);
 
+      print(response.statusCode);
+      print(response.body);
       if (response.statusCode == 200) {
         addJob();
         _isLoading = false;
@@ -123,6 +208,7 @@ class _HomeState extends State<Home> {
         ).show(context);
       } else {
         _isLoading = false;
+
         CherryToast.error(
           description: Text("Failed to send WhatsApp message",
               style: TextStyle(color: Colors.black)),
@@ -133,7 +219,7 @@ class _HomeState extends State<Home> {
       }
     } catch (e) {
       _isLoading = false;
-      print("Error sending WhatsApp message: $e");
+      print("Error Execution sending WhatsApp message: $e");
       CherryToast.error(
         description: Text("Failed to send WhatsApp message",
             style: TextStyle(color: Colors.black)),
@@ -149,6 +235,7 @@ class _HomeState extends State<Home> {
     // TODO: implement initState
     super.initState();
     _fetchShopNames();
+    _fetchTailorNames();
     pcsController.addListener(_calculateFinalAmount);
     rateController.addListener(_calculateFinalAmount);
   }
@@ -160,6 +247,7 @@ class _HomeState extends State<Home> {
     pcsController.dispose();
     rateController.dispose();
     sizeController.dispose();
+    otherController.dispose();
 
     super.dispose();
   }
@@ -173,7 +261,6 @@ class _HomeState extends State<Home> {
         backgroundColor: Colors.amber,
         actions: [
           // IconButton(onPressed: () {}, icon: Icon(Icons.menu))
-
           PopupMenuButton<String>(
               position: PopupMenuPosition.under,
               color: Colors.amber,
@@ -203,6 +290,19 @@ class _HomeState extends State<Home> {
                         builder: (context) => ViewCompletedJob()));
                     print("4");
                     break;
+
+                  case "5":
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => ShopScreen()));
+                    print("5");
+                    break;
+
+                  case "6":
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AddNewTailor()));
+                    break;
+
+                  case "7":
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context)=> ViewExistingTailor()));
                 }
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -218,6 +318,18 @@ class _HomeState extends State<Home> {
                         ],
                       ),
                     ),
+                const PopupMenuItem<String>(
+                  value: '6',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_add),
+                      SizedBox(
+                        width: 6,
+                      ),
+                      Text('Add New Tailor')
+                    ],
+                  ),
+                ),
                     const PopupMenuItem<String>(
                         value: '2',
                         child: Row(
@@ -229,6 +341,17 @@ class _HomeState extends State<Home> {
                             Text("View Existing Shop"),
                           ],
                         )),
+                const PopupMenuItem<String>(
+                    value: '7',
+                    child: Row(
+                      children: [
+                        Icon(Icons.person),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text("View Existing Tailor"),
+                      ],
+                    )),
                     const PopupMenuItem(
                         value: '3',
                         child: Row(
@@ -250,7 +373,18 @@ class _HomeState extends State<Home> {
                             ),
                             Text("View Completed Job"),
                           ],
-                        ))
+                        )),
+                const PopupMenuItem(
+                    value: '5',
+                    child: Row(
+                      children: [
+                        Icon(Icons.file_download),
+                        SizedBox(
+                          width: 5,
+                        ),
+                        Text("Import"),
+                      ],
+                    )),
                   ])
         ],
       ),
@@ -263,16 +397,44 @@ class _HomeState extends State<Home> {
                   key: gobleKey,
                   child: Column(
                     children: [
+
+                      CustomDropdown.search(
+                        decoration: CustomDropdownDecoration(
+                            closedFillColor: Colors.blueGrey.shade50),
+                        hintText: 'Select Tailor',
+                        items:tailor_list.map((item) {
+                          return item['tailorName'];
+                        }).toList(),
+                        excludeSelected: false,
+                        onChanged: (value) {
+                          var selectedValue = tailor_list.firstWhere(
+                              ((shop) => shop['tailorName'] == value));
+
+                          tailorName = selectedValue['tailorName'];
+                          tailorMobileNumber = selectedValue['mobileNumber'];
+                        },
+                      ),
+                      SizedBox(
+                        height: 16,
+                      ),
                       CustomDropdown.search(
                         decoration: CustomDropdownDecoration(
                             closedFillColor: Colors.blueGrey.shade50),
                         hintText: 'Select Shop',
-                        items: _list,
+                        items: _list.map((item) {
+                          return item['shopName'];
+                        }).toList(),
                         excludeSelected: false,
                         onChanged: (value) {
-                          shopName = value;
+                          var selectedValue = _list.firstWhere(
+                              ((shop) => shop['shopName'] == value));
+
+                          shopName = selectedValue['shopName'];
+                          userMobileNumber = selectedValue['mobileNumber'];
                         },
                       ),
+
+
                       SizedBox(
                         height: 16,
                       ),
@@ -315,7 +477,7 @@ class _HomeState extends State<Home> {
                             child: ListTile(
                               title: const Text('WH'),
                               leading: Radio<bagHandle>(
-                                value: bagHandle.B,
+                                value: bagHandle.WH,
                                 groupValue: bagHandleOrWithoutHandle,
                                 onChanged: (bagHandle? value) {
                                   setState(() {
@@ -326,6 +488,24 @@ class _HomeState extends State<Home> {
                             ),
                           ),
                         ],
+                      ),
+                      TextFormField(
+                        autofocus: false,
+                        keyboardType: TextInputType.text,
+                        controller: otherController,
+                        maxLength: 150,
+                        maxLines: null,
+                        minLines: 1,
+                        onTapOutside: (e) => FocusScope.of(context).unfocus(),
+                        decoration: InputDecoration(
+                          labelText: "Other",
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          isDense: true,
+                        ),
+                      ),
+                      SizedBox(
+                        height: 16,
                       ),
                       TextFormField(
                         autofocus: false,
@@ -392,42 +572,45 @@ class _HomeState extends State<Home> {
               ElevatedButton(
                   onPressed: () async {
                     if (gobleKey.currentState!.validate()) {
-                      _isLoading = true;
-                      _calculateFinalAmount();
-                      await sendWhatsAppMessage(context);
+                      _isLoading = false;
 
+                      _calculateFinalAmount();
+                      // await sendWhatsAppMessage(context);
+                      addJob();
                     }
                   },
                   style: ElevatedButton.styleFrom(
                       side: BorderSide(color: Colors.amber),
                       backgroundColor: Colors.amber),
                   child: _isLoading
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 30,
-                        height: 30,
-                        child: CircularProgressIndicator(color: Colors.black,)),
-                  ],
-                )
-                 : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/whatapps.png',
-                        height: 32,
-                        width: 32,
-                      ),
-                      SizedBox(
-                        width: 5,
-                      ),
-                      Text(
-                        "SEND",
-                        style: TextStyle(color: Colors.black),
-                      )
-                    ],
-                  ))
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                                width: 30,
+                                height: 30,
+                                child: CircularProgressIndicator(
+                                  color: Colors.black,
+                                )),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/whatapps.png',
+                              height: 32,
+                              width: 32,
+                            ),
+                            SizedBox(
+                              width: 5,
+                            ),
+                            Text(
+                              "SEND",
+                              style: TextStyle(color: Colors.black),
+                            )
+                          ],
+                        ))
             ],
           ),
         ),

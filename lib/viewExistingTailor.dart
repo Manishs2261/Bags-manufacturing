@@ -1,16 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class ViewExistingShop extends StatefulWidget {
-  const ViewExistingShop({super.key});
+class ViewExistingTailor extends StatefulWidget {
+  const ViewExistingTailor({super.key});
 
   @override
-  State<ViewExistingShop> createState() => _ViewExistingShopState();
+  State<ViewExistingTailor> createState() => _ViewExistingTailorState();
 }
 
-class _ViewExistingShopState extends State<ViewExistingShop> {
+class _ViewExistingTailorState extends State<ViewExistingTailor> {
   final CollectionReference _usersCollection =
-      FirebaseFirestore.instance.collection('User');
+  FirebaseFirestore.instance.collection('Tailor');
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -35,10 +35,10 @@ class _ViewExistingShopState extends State<ViewExistingShop> {
             padding: EdgeInsets.all(12),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Search by shop name',
+                hintText: 'Search by tailor name',
                 prefixIcon: Icon(Icons.search),
                 border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true,
               ),
               onChanged: (value) {
@@ -69,7 +69,7 @@ class _ViewExistingShopState extends State<ViewExistingShop> {
                 final filterUsers = users.where((user) {
                   final data = user.data() as Map<String, dynamic>;
                   final shopName =
-                      data['shopName']?.toString().toLowerCase() ?? '';
+                      data['tailorName']?.toString().toLowerCase() ?? '';
                   return shopName.contains(_searchQuery);
                 }).toList();
 
@@ -77,7 +77,7 @@ class _ViewExistingShopState extends State<ViewExistingShop> {
                     itemCount: filterUsers.length,
                     itemBuilder: (BuildContext context, int index) {
                       Map<String, dynamic> user =
-                          filterUsers[index].data() as Map<String, dynamic>;
+                      filterUsers[index].data() as Map<String, dynamic>;
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -90,7 +90,7 @@ class _ViewExistingShopState extends State<ViewExistingShop> {
                         ),
                         child: ListTile(
                           title: Text(
-                            user['shopName'] ?? 'NO Name',
+                            user['tailorName'] ?? 'NO Name',
                             style: TextStyle(fontSize: 16),
                           ),
                           subtitle: Text(
