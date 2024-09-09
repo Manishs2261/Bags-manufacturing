@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:bags/addNewShop.dart';
 import 'package:bags/table.dart';
@@ -38,6 +37,7 @@ class _HomeState extends State<Home> {
   final rateController = TextEditingController();
   final sizeController = TextEditingController();
   final otherController = TextEditingController();
+  var whatsappKey;
 
   double finalAmount = 0.0;
   bool _isLoading = false;
@@ -45,6 +45,30 @@ class _HomeState extends State<Home> {
   List<Map<String, String>> _list = [];
   List<Map<String, String>> tailor_list = [];
 
+
+  Future<void> _fetchMetaApiKey() async {
+    try {
+      // Fetch the collection 'metaKey' and get all documents
+      var querySnapshot = await FirebaseFirestore.instance.collection("metaKey").get();
+
+      // If you want to get the first document in the collection
+      if (querySnapshot.docs.isNotEmpty) {
+        // Assuming you want to get a specific field 'apiKey' from the first document
+        var documentSnapshot = querySnapshot.docs.first;
+        var apiKey = documentSnapshot.data()['meta'];// Replace 'apiKey' with your key name
+
+        print(apiKey);
+        setState(() {
+          whatsappKey = apiKey;
+
+        });
+      } else {
+        print('No documents found in the collection.');
+      }
+    } catch (e) {
+      print("Meta API fetching error: $e");
+    }
+  }
 
   Future<void> _fetchTailorNames() async {
     try {
@@ -139,26 +163,25 @@ class _HomeState extends State<Home> {
     });
   }
 
-  Future<void> sendWhatsAppMessage(BuildContext context) async {
+  Future<void> sendWhatsAppMessage(BuildContext context,) async {
+
     var now = DateTime.now();
-    var formatter = DateFormat('dd-MM-yyyy');
+    var formatter = DateFormat('yyyy-MM-dd');
     String formattedDate = formatter.format(now);
 
     var url = Uri.parse(
         'https://graph.facebook.com/v20.0/395078663694887/messages'); // Replace with your API endpoint
 
-    // Headers
     var headers = {
-      'Authorization':
-          'Bearer EAAQtQymSe5gBOybh0V4R5SGZC6OAL4mGsfSH2Q8uFvJEnxQPHSZBgSo1Q6kYVW09VhZBfwrViqNZC0aANKbqGEsXSyl1mLcajs0ZBZCwKJt0ZCjyaVnSAFXNwUSis9w8NFRCZA8O3wzvTGx95GBZCxqToOxZCAZCpi3z5OmVIazCe5Dholl0moZARM47h0k5AEQ33gL8IYaubcVDD8UcKyPyAAm7wEYuo3gBdTJyOKqViipRUndutBwVSaUL',
-      // Replace with your token
+      'Authorization': 'Bearer $whatsappKey', // Replace with your token
       'Content-Type': 'application/json',
     };
+
 
     // Body
     var body = jsonEncode({
       'messaging_product': 'whatsapp',
-      'to': userMobileNumber, // Replace with recipient's phone number
+      'to':userMobileNumber, // Replace with recipient's phone number
       'type': 'template',
       'template': {
         'name': 'deliver', // Replace with your WhatsApp template name
@@ -177,7 +200,7 @@ class _HomeState extends State<Home> {
               // Placeholder {{3}} for Size
               {'type': 'text', 'text': bagHandleOrWithoutHandle?.name},
               // Placeholder {{4}} for Handle/Without Handle
-              {'type': 'text', 'text': otherController.text},
+              {'type': 'text', 'text': otherController.text.isNotEmpty} ,
               // Placeholder {{5}} for Other
               {'type': 'text', 'text': pcsController.text},
               // Placeholder {{6}} for Pcs
@@ -191,8 +214,11 @@ class _HomeState extends State<Home> {
       }
     });
 
+    print("step 4");
+
     try {
       var response = await http.post(url, headers: headers, body: body);
+      print("step 5");
 
       print(response.statusCode);
       print(response.body);
@@ -208,6 +234,7 @@ class _HomeState extends State<Home> {
         ).show(context);
       } else {
         _isLoading = false;
+        print("step 6");
 
         CherryToast.error(
           description: Text("Failed to send WhatsApp message",
@@ -218,7 +245,10 @@ class _HomeState extends State<Home> {
         ).show(context);
       }
     } catch (e) {
+      print("step 7");
+
       _isLoading = false;
+
       print("Error Execution sending WhatsApp message: $e");
       CherryToast.error(
         description: Text("Failed to send WhatsApp message",
@@ -234,6 +264,7 @@ class _HomeState extends State<Home> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    _fetchMetaApiKey();
     _fetchShopNames();
     _fetchTailorNames();
     pcsController.addListener(_calculateFinalAmount);
@@ -503,6 +534,12 @@ class _HomeState extends State<Home> {
                               borderRadius: BorderRadius.circular(8)),
                           isDense: true,
                         ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter the number of pieces';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(
                         height: 16,
@@ -572,11 +609,12 @@ class _HomeState extends State<Home> {
               ElevatedButton(
                   onPressed: () async {
                     if (gobleKey.currentState!.validate()) {
-                      _isLoading = false;
+                      _isLoading = true;
+                      print("step 11");
 
                       _calculateFinalAmount();
-                      // await sendWhatsAppMessage(context);
-                      addJob();
+                       await sendWhatsAppMessage(context);
+
                     }
                   },
                   style: ElevatedButton.styleFrom(

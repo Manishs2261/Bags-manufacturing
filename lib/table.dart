@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -72,7 +73,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> fetchData() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('JobCollection').get();
+      final snapshot = await FirebaseFirestore.instance.collection('JobCollection').orderBy('date', descending: true).get();
       setState(() {
         allData = snapshot.docs
             .map((doc) => ShopData.fromDocument(doc.data()))
@@ -116,7 +117,8 @@ class _ShopScreenState extends State<ShopScreen> {
       }
 
       bool matchesQuery = data.shopName.toLowerCase().contains(query) ||
-          data.tailorName.toLowerCase().contains(query);
+          data.tailorName.toLowerCase().contains(query) ||
+      data.deliverDate.contains(query);
 
       print('Data: ${data.shopName}, ${data.tailorName}, Matches: $matchesQuery'); // Debugging line
       return matchesDateRange && matchesQuery;
@@ -162,7 +164,8 @@ class _ShopScreenState extends State<ShopScreen> {
     if (status.isGranted) {
       Directory? downloadsDirectory = await getExternalStorageDirectory();
       // String filePath = '${downloadsDirectory?.path}/shop_data_export.xlsx';
-      String filePath = '/storage/emulated/0/Download/shop_data_export.xlsx';
+      String formattedDate = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      String filePath = '/storage/emulated/0/Download/shop_data_export_$formattedDate.xlsx';
 
       List<int>? fileBytes = excel.save();
       if (fileBytes != null) {
@@ -184,6 +187,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('Shop Data'),
         backgroundColor: Colors.amber,
@@ -216,39 +220,43 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: [
-                  DataColumn(label: Text('Date')),
-                  DataColumn(label: Text('Shop Name')),
-                  DataColumn(label: Text('Tailor Name')),
-                  DataColumn(label: Text('Size')),
-                  DataColumn(label: Text('H')),
-                  DataColumn(label: Text('Other')),
-                  DataColumn(label: Text('Pcs')),
-                  DataColumn(label: Text('Rate')),
-                  DataColumn(label: Text('Total')),
-                ],
-                rows: filteredData.map((item) {
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(item.deliverDate)),
-                      DataCell(Text(item.shopName)),
-                      DataCell(Text(item.tailorName)),
-                      DataCell(Text(item.size)),
-                      DataCell(Text(item.bagHandle)),
-                      DataCell(Text(item.other)),
-                      DataCell(Text(item.pcs)),
-                      DataCell(Text(item.rate)),
-                      DataCell(Text(item.total.toString())),
-                    ],
-                  );
-                }).toList(),
+              scrollDirection: Axis.vertical,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: [
+                    DataColumn(label: Text('Date')),
+                    DataColumn(label: Text('Shop Name')),
+                    DataColumn(label: Text('Tailor Name')),
+                    DataColumn(label: Text('Size')),
+                    DataColumn(label: Text('H')),
+                    DataColumn(label: Text('Other')),
+                    DataColumn(label: Text('Pcs')),
+                    DataColumn(label: Text('Rate')),
+                    DataColumn(label: Text('Total')),
+                  ],
+                  rows: filteredData.map((item) {
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(item.deliverDate)),
+                        DataCell(Text(item.shopName)),
+                        DataCell(Text(item.tailorName)),
+                        DataCell(Text(item.size)),
+                        DataCell(Text(item.bagHandle)),
+                        DataCell(Text(item.other)),
+                        DataCell(Text(item.pcs)),
+                        DataCell(Text(item.rate)),
+                        DataCell(Text(item.total.toString())),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+
   }
 }

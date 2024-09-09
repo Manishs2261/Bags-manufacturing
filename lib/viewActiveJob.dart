@@ -15,6 +15,8 @@ class ViewActivejob extends StatefulWidget {
 }
 
 class _ViewActivejobState extends State<ViewActivejob> {
+  var whatsappKey;
+
   final CollectionReference jobCollection =
       FirebaseFirestore.instance.collection("JobCollection");
   final TextEditingController _searchController = TextEditingController();
@@ -33,22 +35,31 @@ class _ViewActivejobState extends State<ViewActivejob> {
         'isCompleted': true,
         'reDate': formattedDate,
       });
-
-      CherryToast.success(
-              toastPosition: Position.bottom,
-              animationType: AnimationType.fromBottom,
-              animationDuration: Duration(milliseconds: 300),
-              title: Text("Completed successfully",
-                  style: TextStyle(color: Colors.black)))
-          .show(context);
     } catch (e) {
       print("error:$e");
-      CherryToast.error(
-        description: Text("Failed", style: TextStyle(color: Colors.black)),
-        animationType: AnimationType.fromBottom,
-        toastPosition: Position.bottom,
-        animationDuration: Duration(milliseconds: 300),
-      ).show(context);
+    }
+  }
+
+  Future<void> _fetchMetaApiKey() async {
+    try {
+      // Fetch the collection 'metaKey' and get all documents
+      var querySnapshot =
+          await FirebaseFirestore.instance.collection("metaKey").get();
+
+      // If you want to get the first document in the collection
+      if (querySnapshot.docs.isNotEmpty) {
+        // Assuming you want to get a specific field 'apiKey' from the first document
+        var documentSnapshot = querySnapshot.docs.first;
+        var apiKey = documentSnapshot
+            .data()['meta']; // Replace 'apiKey' with your key name
+        setState(() {
+          whatsappKey = apiKey;
+        });
+      } else {
+        print('No documents found in the collection.');
+      }
+    } catch (e) {
+      print("Meta API fetching error: $e");
     }
   }
 
@@ -63,11 +74,12 @@ class _ViewActivejobState extends State<ViewActivejob> {
 
     // Headers
     var headers = {
-      'Authorization':
-          'Bearer EAAQtQymSe5gBOybh0V4R5SGZC6OAL4mGsfSH2Q8uFvJEnxQPHSZBgSo1Q6kYVW09VhZBfwrViqNZC0aANKbqGEsXSyl1mLcajs0ZBZCwKJt0ZCjyaVnSAFXNwUSis9w8NFRCZA8O3wzvTGx95GBZCxqToOxZCAZCpi3z5OmVIazCe5Dholl0moZARM47h0k5AEQ33gL8IYaubcVDD8UcKyPyAAm7wEYuo3gBdTJyOKqViipRUndutBwVSaUL',
+      'Authorization': 'Bearer $whatsappKey',
       // Replace with your token
       'Content-Type': 'application/json',
     };
+
+print("Other $other");
 
     // Body
     var body = jsonEncode({
@@ -144,9 +156,15 @@ class _ViewActivejobState extends State<ViewActivejob> {
   @override
   void dispose() {
     // TODO: implement dispose
-
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _fetchMetaApiKey();
   }
 
   @override
@@ -246,10 +264,11 @@ class _ViewActivejobState extends State<ViewActivejob> {
                                             fontSize: 18,
                                             fontWeight: FontWeight.w500),
                                       ),
-                                      Text("Tailors Name:-${user['tailorName'] ?? 'NO Name'}",
+                                      Text(
+                                        "Tailor Name:-${user['tailorName'] ?? 'NO Name'}",
                                         style: TextStyle(
-                                            fontSize: 16,
-                                             ),
+                                          fontSize: 16,
+                                        ),
                                       ),
                                       Row(
                                         children: [
@@ -308,18 +327,18 @@ class _ViewActivejobState extends State<ViewActivejob> {
                                             height: 30,
                                             child: ElevatedButton(
                                                 onPressed: () {
-                                                  // sendWhatsAppMessage(
-                                                  //     context,
-                                                  //     user['mobile'],
-                                                  //     user['shopName'],
-                                                  //     user['size'],
-                                                  //     user['pcs'],
-                                                  //     user['rate'],
-                                                  //     user['totalAmount'],
-                                                  //     user['other'],
-                                                  //     user['Handle'],
-                                                  //     users[index].id);
-                                                  jobUpdated(users[index].id);
+                                                  sendWhatsAppMessage(
+                                                      context,
+                                                      user['mobile'],
+                                                      user['shopName'],
+                                                      user['size'],
+                                                      user['pcs'],
+                                                      user['rate'],
+                                                      user['totalAmount'],
+                                                      user['other'],
+                                                      user['Handle'],
+                                                      users[index].id);
+
                                                 },
                                                 style: ElevatedButton.styleFrom(
                                                     padding:
