@@ -35,9 +35,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   }
 
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: CircleAvatar(
                   radius: 100,
                   backgroundColor: Colors.white,
-                  child: Image.asset("assets/images/bag.png"),
+                  backgroundImage: AssetImage('assets/images/bag.png'),
                 ),
               ),
             ),

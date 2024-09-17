@@ -4,8 +4,10 @@ import 'package:cherry_toast/cherry_toast.dart';
 import 'package:cherry_toast/resources/arrays.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ViewActivejob extends StatefulWidget {
   const ViewActivejob({super.key});
@@ -21,6 +23,19 @@ class _ViewActivejobState extends State<ViewActivejob> {
       FirebaseFirestore.instance.collection("JobCollection");
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+  var now = DateTime.now();
+  var formatter = DateFormat('yyyy-MM-dd');
+  var formattedDate;
+  var tailorMobileNumber;
+
+  Future<void> _launchURL(number) async {
+    final Uri _url = Uri.parse('https://wa.me/$number');
+
+    if (!await launchUrl(_url)) {
+      throw 'Could not launch $_url';
+    }
+  }
 
   Future<void> jobUpdated(String userId) async {
     var now = DateTime.now();
@@ -79,7 +94,7 @@ class _ViewActivejobState extends State<ViewActivejob> {
       'Content-Type': 'application/json',
     };
 
-print("Other $other");
+    print("Other $other");
 
     // Body
     var body = jsonEncode({
@@ -165,6 +180,7 @@ print("Other $other");
     // TODO: implement initState
     super.initState();
     _fetchMetaApiKey();
+    formattedDate = formatter.format(now);
   }
 
   @override
@@ -320,25 +336,42 @@ print("Other $other");
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Delivered Date:- ${user['date'] ?? 'NO Name'}',
+                                            'Delivered Date:- ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}',
                                             style: TextStyle(fontSize: 14),
                                           ),
                                           SizedBox(
                                             height: 30,
                                             child: ElevatedButton(
                                                 onPressed: () {
-                                                  sendWhatsAppMessage(
-                                                      context,
-                                                      user['mobile'],
-                                                      user['shopName'],
-                                                      user['size'],
-                                                      user['pcs'],
-                                                      user['rate'],
-                                                      user['totalAmount'],
-                                                      user['other'],
-                                                      user['Handle'],
-                                                      users[index].id);
+                                                  Clipboard.setData(
+                                                      ClipboardData(text: '''
+Order details - Received
+PickUp Date - ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}
+Shop Name - ${user['shopName']}
+Size - ${user['size']}
+Handle/Without Handle - ${user['Handle']}
+Other - ${user['other']}
+Pcs - ${user['pcs']}
+Rate - ${user['rate']}
+Total - ${user['totalAmount']}
+'''));
 
+
+                                                  jobUpdated(users[index].id);
+                                                  _launchURL(
+                                                      user['tailorNumber']);
+
+                                                  // sendWhatsAppMessage(
+                                                  //     context,
+                                                  //     user['mobile'],
+                                                  //     user['shopName'],
+                                                  //     user['size'],
+                                                  //     user['pcs'],
+                                                  //     user['rate'],
+                                                  //     user['totalAmount'],
+                                                  //     user['other'],
+                                                  //     user['Handle'],
+                                                  //     users[index].id);
                                                 },
                                                 style: ElevatedButton.styleFrom(
                                                     padding:

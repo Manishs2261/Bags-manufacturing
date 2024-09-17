@@ -65,6 +65,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   void initState() {
     super.initState();
+
     fetchData();
     _searchController.addListener(() {
       filterData();
@@ -142,14 +143,14 @@ class _ShopScreenState extends State<ShopScreen> {
     var excel = Excel.createExcel();
     Sheet sheetObject = excel['Sheet1'];
 
-    List<String> headers = ['Date', 'Shop Name', 'Tailor Name', 'Size', 'H', 'Other', 'Pcs', 'Rate', 'Total'];
+    List<String> headers = ['Date', 'Shop Name', 'Tailor Name', 'Size', 'Handle/Without Handle', 'Other', 'Pcs', 'Rate', 'Total'];
     for (int i = 0; i < headers.length; i++) {
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = TextCellValue(headers[i]);
     }
 
     for (int i = 0; i < filteredData.length; i++) {
       ShopData item = filteredData[i];
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(item.deliverDate);
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(item.deliverDate)));
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.shopName);
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(item.tailorName);
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(item.size);
@@ -229,7 +230,7 @@ class _ShopScreenState extends State<ShopScreen> {
                     DataColumn(label: Text('Shop Name')),
                     DataColumn(label: Text('Tailor Name')),
                     DataColumn(label: Text('Size')),
-                    DataColumn(label: Text('H')),
+                    DataColumn(label: Text('Handle/Without Handle')),
                     DataColumn(label: Text('Other')),
                     DataColumn(label: Text('Pcs')),
                     DataColumn(label: Text('Rate')),
@@ -238,11 +239,11 @@ class _ShopScreenState extends State<ShopScreen> {
                   rows: filteredData.map((item) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(item.deliverDate)),
+                        DataCell(Text('${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(item.deliverDate))}')),
                         DataCell(Text(item.shopName)),
                         DataCell(Text(item.tailorName)),
                         DataCell(Text(item.size)),
-                        DataCell(Text(item.bagHandle)),
+                        DataCell(Align( child: Text(item.bagHandle))),
                         DataCell(Text(item.other)),
                         DataCell(Text(item.pcs)),
                         DataCell(Text(item.rate)),

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ViewCompletedJob extends StatefulWidget {
   const ViewCompletedJob({super.key});
@@ -14,10 +15,22 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  var now = DateTime.now();
+  var formatter = DateFormat('yyyy-MM-dd');
+  var formattedDate;
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    formattedDate = formatter.format(now);
   }
 
   @override
@@ -116,7 +129,8 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
                                           fontSize: 18,
                                           fontWeight: FontWeight.w500),
                                     ),
-                                    Text("Tailors Name:-${user['tailorName'] ?? 'NO Name'}",
+                                    Text(
+                                      "Tailor Name:-${user['tailorName'] ?? 'NO Name'}",
                                       style: TextStyle(
                                         fontSize: 16,
                                       ),
@@ -155,7 +169,7 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
                                           fontWeight: FontWeight.w500),
                                     ),
                                     Text(
-                                      'Delivered Date:- ${user['date'] ?? 'NO Name'}',
+                                      'Delivered Date:- ${DateFormat('dd-MM-yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}',
                                       style: TextStyle(fontSize: 14),
                                     ),
                                     Text(

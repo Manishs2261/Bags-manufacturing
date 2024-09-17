@@ -8,7 +8,7 @@
 
 
     <application
-        android:label="bags"
+        android:label="SunitaBags"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
