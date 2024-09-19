@@ -169,7 +169,7 @@ class _ViewCompletedJobState extends State<ViewCompletedJob> {
                                           fontWeight: FontWeight.w500),
                                     ),
                                     Text(
-                                      'Delivered Date:- ${DateFormat('dd-MM-yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}',
+                                      'Picked Date:- ${DateFormat('dd-MM-yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}',
                                       style: TextStyle(fontSize: 14),
                                     ),
                                     Text(

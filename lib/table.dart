@@ -39,7 +39,7 @@ class ShopData {
       shopName: data['shopName'] ?? '',
       deliverDate: data['date'] ?? '',
       pcs: data['pcs'] ?? '',
-      receivedDate: data['receivedDate'] ?? '',
+      receivedDate: data['reDate'] ?? '',
       rate: data['rate'] ?? '',
       total: (data['totalAmount'] ?? 0).toDouble(),
       bagHandle: data['Handle'] ?? '',
@@ -47,6 +47,7 @@ class ShopData {
       other: data['other'] ?? '',
       size: data['size'] ?? '',
       tailorName: data['tailorName'] ?? '',
+
     );
   }
 }
@@ -74,7 +75,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> fetchData() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('JobCollection').orderBy('date', descending: true).get();
+      final snapshot = await FirebaseFirestore.instance.collection('JobCollection').where('isCompleted',isEqualTo: true).orderBy('reDate', descending: true).get();
       setState(() {
         allData = snapshot.docs
             .map((doc) => ShopData.fromDocument(doc.data()))
@@ -109,8 +110,10 @@ class _ShopScreenState extends State<ShopScreen> {
       bool matchesDateRange = true;
       if (dateRange != null) {
         try {
-          DateTime deliverDate = _parseDate(data.deliverDate);
-          matchesDateRange = deliverDate.isAfter(dateRange!.start) && deliverDate.isBefore(dateRange!.end);
+          DateTime deliverDate = _parseDate(data.receivedDate);
+          matchesDateRange =  (deliverDate.isAfter(dateRange!.start) || deliverDate.isAtSameMomentAs(dateRange!.start)) &&
+              (deliverDate.isBefore(dateRange!.end) || deliverDate.isAtSameMomentAs(dateRange!.end));
+          print("match time ...$matchesDateRange");
         } catch (e) {
           print('Error parsing date for ${data.deliverDate}: $e');
           matchesDateRange = false;
@@ -143,15 +146,15 @@ class _ShopScreenState extends State<ShopScreen> {
     var excel = Excel.createExcel();
     Sheet sheetObject = excel['Sheet1'];
 
-    List<String> headers = ['Date', 'Shop Name', 'Tailor Name', 'Size', 'Handle/Without Handle', 'Other', 'Pcs', 'Rate', 'Total'];
+    List<String> headers = [' Received Date', 'Shop Name', 'Tailor Name', 'Size', 'Handle/Without Handle', 'Other', 'Pcs', 'Rate', 'Total'];
     for (int i = 0; i < headers.length; i++) {
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).value = TextCellValue(headers[i]);
     }
 
     for (int i = 0; i < filteredData.length; i++) {
       ShopData item = filteredData[i];
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(item.deliverDate)));
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.shopName);
+       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1)).value = TextCellValue(DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(item.receivedDate)));
+       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1)).value = TextCellValue(item.shopName);
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1)).value = TextCellValue(item.tailorName);
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1)).value = TextCellValue(item.size);
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1)).value = TextCellValue(item.bagHandle);
@@ -226,7 +229,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
                   columns: [
-                    DataColumn(label: Text('Date')),
+                    DataColumn(label: Text('Received Date')),
                     DataColumn(label: Text('Shop Name')),
                     DataColumn(label: Text('Tailor Name')),
                     DataColumn(label: Text('Size')),
@@ -239,7 +242,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   rows: filteredData.map((item) {
                     return DataRow(
                       cells: [
-                        DataCell(Text('${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(item.deliverDate))}')),
+                        DataCell(Text('${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(item.receivedDate))}')),
                         DataCell(Text(item.shopName)),
                         DataCell(Text(item.tailorName)),
                         DataCell(Text(item.size)),

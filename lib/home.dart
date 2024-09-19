@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:bags/addNewShop.dart';
 import 'package:bags/table.dart';
@@ -39,10 +40,14 @@ class _HomeState extends State<Home> {
   final rateController = TextEditingController();
   final sizeController = TextEditingController();
   final otherController = TextEditingController();
+
   var whatsappKey;
+  bool isShopName = false;
+  bool isTailorName = false;
 
   double finalAmount = 0.0;
   bool _isLoading = false;
+  bool isDate = false;
 
   List<Map<String, String>> _list = [];
   List<Map<String, String>> tailor_list = [];
@@ -50,6 +55,23 @@ class _HomeState extends State<Home> {
   var now = DateTime.now();
   var formatter = DateFormat('yyyy-MM-dd');
   var formattedDate;
+  DateTime? _selectedDate;
+
+  // Function to show the date picker
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(), // Initial date
+      firstDate: DateTime(2000), // Starting date
+      lastDate: DateTime(2100), // Ending date
+    );
+
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+      });
+    }
+  }
 
   Future<void> _launchURL() async {
     final Uri _url = Uri.parse('https://wa.me/$tailorMobileNumber');
@@ -153,14 +175,17 @@ class _HomeState extends State<Home> {
         'Handle': bagHandleOrWithoutHandle?.name,
         'isCompleted': false,
         'other': otherController.text,
-        'date': formattedDate,
-        'tailorNumber':tailorMobileNumber
+        'date': DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(_selectedDate.toString())),
+        'tailorNumber': tailorMobileNumber
       });
 
       pcsController.clear();
       rateController.clear();
       sizeController.clear();
       otherController.clear();
+      _selectedDate = null;
+
+
 
       finalAmount = 0;
     } catch (e) {
@@ -448,8 +473,29 @@ class _HomeState extends State<Home> {
                   key: gobleKey,
                   child: Column(
                     children: [
+                      ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              side: BorderSide(
+                                  color: isDate ? Colors.red : Colors.transparent),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                // Border radius of 8
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 15),
+                              backgroundColor: Colors.blueGrey.shade50),
+                          onPressed: () => _selectDate(context),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [Text("${_selectedDate == null ? "Pickup Date" : DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(_selectedDate.toString()))}", style: TextStyle(color: Colors.black),)],
+                          )),
+                      SizedBox(
+                        height: 16,
+                      ),
                       CustomDropdown.search(
                         decoration: CustomDropdownDecoration(
+                            closedBorder: isShopName
+                                ? Border.all(color: Colors.red)
+                                : null,
                             closedFillColor: Colors.blueGrey.shade50),
                         hintText: 'Select Tailor',
                         items: tailor_list.map((item) {
@@ -469,6 +515,9 @@ class _HomeState extends State<Home> {
                       ),
                       CustomDropdown.search(
                         decoration: CustomDropdownDecoration(
+                            closedBorder: isTailorName
+                                ? Border.all(color: Colors.red)
+                                : null,
                             closedFillColor: Colors.blueGrey.shade50),
                         hintText: 'Select Shop',
                         items: _list.map((item) {
@@ -551,12 +600,6 @@ class _HomeState extends State<Home> {
                               borderRadius: BorderRadius.circular(8)),
                           isDense: true,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter the number of pieces';
-                          }
-                          return null;
-                        },
                       ),
                       SizedBox(
                         height: 16,
@@ -625,14 +668,25 @@ class _HomeState extends State<Home> {
               ),
               ElevatedButton(
                   onPressed: () async {
-                    if (gobleKey.currentState!.validate()) {
-                      _calculateFinalAmount();
-                      //  await sendWhatsAppMessage(context);
 
+                    if(_selectedDate == null) isDate = true;
+                    if (tailorName == null) isTailorName = true;
+                    if (shopName == null) isShopName = true;
+
+                    if (gobleKey.currentState!.validate() &&
+                        tailorName != null &&
+                        shopName != null &&
+                         _selectedDate != null) {
+                      isDate = false;
+                      isTailorName = false;
+                      isShopName = false;
+                      _calculateFinalAmount();
+//                       //  await sendWhatsAppMessage(context);
+//
                       addJob();
                       Clipboard.setData(ClipboardData(text: '''
 Order details - Pickup
-PickUp Date - ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}
+PickUp Date - ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(_selectedDate.toString()))}
 Shop Name - ${shopName}
 Size - ${sizeController.text}
 Handle/Without Handle - ${bagHandleOrWithoutHandle?.name}

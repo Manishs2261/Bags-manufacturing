@@ -39,7 +39,7 @@ class _ViewActivejobState extends State<ViewActivejob> {
 
   Future<void> jobUpdated(String userId) async {
     var now = DateTime.now();
-    var formatter = DateFormat('dd-MM-yyyy');
+    var formatter = DateFormat('yyyy-MM-dd');
     String formattedDate = formatter.format(now);
 
     try {
@@ -336,7 +336,7 @@ class _ViewActivejobState extends State<ViewActivejob> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Delivered Date:- ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}',
+                                            'Picked Date:- ${user['date']}',
                                             style: TextStyle(fontSize: 14),
                                           ),
                                           SizedBox(
@@ -346,7 +346,8 @@ class _ViewActivejobState extends State<ViewActivejob> {
                                                   Clipboard.setData(
                                                       ClipboardData(text: '''
 Order details - Received
-PickUp Date - ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}
+PickUp Date - ${user['date']}
+Received Date - ${DateFormat('dd/MM/yyyy').format(DateFormat('yyyy-MM-dd').parse(formattedDate))}
 Shop Name - ${user['shopName']}
 Size - ${user['size']}
 Handle/Without Handle - ${user['Handle']}
